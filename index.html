@@ -1,604 +1,421 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="facebook-domain-verification" content="171da0kl0vo1sdtyq9yf0glvh2ac4e" />
-    <title>DapurKita - Online Kitchen Shop</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #ff6b6b;
-            --secondary-color: #ff8e8e;
-            --dark-color: #333;
-            --light-color: #f8f9fa;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --info-color: #17a2b8;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f5f5;
-            color: var(--dark-color);
-            line-height: 1.6;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
-        }
-        
-        /* Header Styles */
-        header {
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-        }
-        
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-        
-        .logo span {
-            color: var(--dark-color);
-        }
-        
-        .nav-links {
-            display: flex;
-            list-style: none;
-        }
-        
-        .nav-links li {
-            margin-left: 20px;
-        }
-        
-        .nav-links a {
-            text-decoration: none;
-            color: var(--dark-color);
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .nav-links a:hover {
-            color: var(--primary-color);
-        }
-        
-        .auth-buttons .btn {
-            margin-left: 10px;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        
-        .btn-login {
-            background-color: transparent;
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
-        }
-        
-        .btn-login:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .btn-register {
-            background-color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-            color: white;
-        }
-        
-        .btn-register:hover {
-            background-color: #e05555;
-            border-color: #e05555;
-        }
-        
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--dark-color);
-            cursor: pointer;
-        }
-        
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1600585152220-90363fe7e115?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');
-            background-size: cover;
-            background-position: center;
-            height: 400px;
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
-        
-        .hero-content {
-            width: 100%;
-            padding: 0 20px;
-        }
-        
-        .hero h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
-        
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-        }
-        
-        .btn-shop {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .btn-shop:hover {
-            background-color: #e05555;
-        }
-        
-        /* Products Section */
-        .section-title {
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-        }
-        
-        .section-title h2 {
-            font-size: 2rem;
-            display: inline-block;
-            padding-bottom: 10px;
-        }
-        
-        .section-title h2::after {
-            content: '';
-            position: absolute;
-            width: 50px;
-            height: 3px;
-            background-color: var(--primary-color);
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 30px;
-            margin-bottom: 50px;
-        }
-        
-        .product-card {
-            background-color: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .product-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-        }
-        
-        .product-img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        
-        .product-info {
-            padding: 20px;
-        }
-        
-        .product-title {
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-            color: var(--dark-color);
-        }
-        
-        .product-price {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .current-price {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        
-        .original-price {
-            font-size: 0.9rem;
-            text-decoration: line-through;
-            color: #999;
-            margin-left: 10px;
-        }
-        
-        .discount-badge {
-            background-color: var(--warning-color);
-            color: var(--dark-color);
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .btn-add-to-cart {
-            width: 100%;
-            padding: 10px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .btn-add-to-cart:hover {
-            background-color: #e05555;
-        }
-        
-        /* Footer */
-        footer {
-            background-color: var(--dark-color);
-            color: white;
-            padding: 50px 0 20px;
-        }
-        
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-        
-        .footer-column h3 {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            position: relative;
-            padding-bottom: 10px;
-        }
-        
-        .footer-column h3::after {
-            content: '';
-            position: absolute;
-            width: 40px;
-            height: 2px;
-            background-color: var(--primary-color);
-            bottom: 0;
-            left: 0;
-        }
-        
-        .footer-column ul {
-            list-style: none;
-        }
-        
-        .footer-column ul li {
-            margin-bottom: 10px;
-        }
-        
-        .footer-column ul li a {
-            color: #ddd;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        
-        .footer-column ul li a:hover {
-            color: var(--primary-color);
-        }
-        
-        .social-links {
-            display: flex;
-            gap: 15px;
-        }
-        
-        .social-links a {
-            color: white;
-            font-size: 1.2rem;
-            transition: color 0.3s;
-        }
-        
-        .social-links a:hover {
-            color: var(--primary-color);
-        }
-        
-        .footer-bottom {
-            text-align: center;
-            padding-top: 20px;
-            border-top: 1px solid #444;
-        }
-        
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .nav-links {
-                display: none;
-                flex-direction: column;
-                width: 100%;
-                margin-top: 15px;
-            }
-            
-            .nav-links.active {
-                display: flex;
-            }
-            
-            .nav-links li {
-                margin: 10px 0;
-            }
-            
-            .auth-buttons {
-                display: none;
-                width: 100%;
-                margin-top: 15px;
-            }
-            
-            .auth-buttons.active {
-                display: flex;
-                justify-content: center;
-            }
-            
-            .mobile-menu-btn {
-                display: block;
-                position: absolute;
-                top: 15px;
-                right: 15px;
-            }
-            
-            .hero {
-                height: 300px;
-            }
-            
-            .hero h1 {
-                font-size: 2rem;
-            }
-            
-            .hero p {
-                font-size: 1rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .hero {
-                height: 250px;
-            }
-            
-            .hero h1 {
-                font-size: 1.8rem;
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TikTok 多像素批量激活 · 新版</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="批量激活多个 TikTok Pixel 的 Register / Purchase 等事件，支持并行、批量上传、历史记录与CSV导出。">
 </head>
-<body>
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <a href="#" class="logo">Dapur<span>Kita</span></a>
-                
-                <ul class="nav-links">
-                    <li><a href="#">Home</a></li>
-                    <li><a href="#">Products</a></li>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Contact</a></li>
-                </ul>
-                
-                <div class="auth-buttons">
-                    <a href="#" class="btn btn-login">Login</a>
-                    <a href="#" class="btn btn-register">Register</a>
-                </div>
-                
-                <button class="mobile-menu-btn">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </nav>
-        </div>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <div class="max-w-5xl mx-auto p-6 space-y-6">
+    <header class="flex items-center justify-between">
+      <h1 class="text-2xl md:text-3xl font-bold">TikTok 多像素批量激活</h1>
+      <div class="text-sm text-slate-500">仅供被授权的广告账户运维使用</div>
     </header>
-    
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1>Premium Kitchen Products</h1>
-                <p>Discover high-quality kitchen essentials at unbeatable prices</p>
-                <button class="btn-shop">Shop Now</button>
-            </div>
-        </div>
+
+    <!-- Stats -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="rounded-2xl bg-white p-4 shadow">
+        <div class="text-xs text-slate-500">总像素</div>
+        <div id="stat-total" class="text-2xl font-semibold">0</div>
+      </div>
+      <div class="rounded-2xl bg-white p-4 shadow">
+        <div class="text-xs text-slate-500">已激活</div>
+        <div id="stat-success" class="text-2xl font-semibold">0</div>
+      </div>
+      <div class="rounded-2xl bg-white p-4 shadow">
+        <div class="text-xs text-slate-500">失败</div>
+        <div id="stat-fail" class="text-2xl font-semibold">0</div>
+      </div>
+      <div class="rounded-2xl bg-white p-4 shadow">
+        <div class="text-xs text-slate-500">成功率</div>
+        <div id="stat-rate" class="text-2xl font-semibold">0%</div>
+      </div>
     </section>
-    
-    <!-- Products Section -->
-    <section class="products">
-        <div class="container">
-            <div class="section-title">
-                <h2>Featured Products</h2>
-            </div>
-            
-            <div class="products-grid">
-                <!-- Product 1 -->
-                <div class="product-card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGUGlswM2JlhRdWdrvE5Gq0S8uXIoEuV67gQ&s" alt="Kitchen Product" class="product-img">
-                    <div class="product-info">
-                        <h3 class="product-title">Stainless Steel Cooking Pot</h3>
-                        <div class="product-price">
-                            <span class="current-price">RM 5</span>
-                            <span class="original-price">RM 33</span>
-                            <span class="discount-badge">85% OFF</span>
-                        </div>
-                        <button class="btn-add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-                
-                <!-- Product 2 -->
-                <div class="product-card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqC9mpXFrXWiMW6sUQBqgyWe89UQUJsIidjoxZdpMuAZ-G-u3T4OWgUbNvhcAh1Znb4zM&usqp=CAU" alt="Kitchen Product" class="product-img">
-                    <div class="product-info">
-                        <h3 class="product-title">Non-Stick Frying Pan</h3>
-                        <div class="product-price">
-                            <span class="current-price">RM 5</span>
-                            <span class="original-price">RM 33</span>
-                            <span class="discount-badge">85% OFF</span>
-                        </div>
-                        <button class="btn-add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-                
-                <!-- Product 3 -->
-                <div class="product-card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSg1E9XKg5i31_m0x9CLCnAG_ymRSKCnjMZXqqCeNe6PEymBp2WZzGEZ1_oDB_tVYyjjbs&usqp=CAU" alt="Kitchen Product" class="product-img">
-                    <div class="product-info">
-                        <h3 class="product-title">Ceramic Cooking Pot</h3>
-                        <div class="product-price">
-                            <span class="current-price">RM 5</span>
-                            <span class="original-price">RM 33</span>
-                            <span class="discount-badge">85% OFF</span>
-                        </div>
-                        <button class="btn-add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-                
-                <!-- Product 4 -->
-                <div class="product-card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjweqJgnff0i30rFC_iu3wOgwZ0jpAE_mmetzEexscukyHyrRtEmqnXv5ajOC8LmL7zpw&usqp=CAU" alt="Kitchen Product" class="product-img">
-                    <div class="product-info">
-                        <h3 class="product-title">Premium Cooking Utensils Set</h3>
-                        <div class="product-price">
-                            <span class="current-price">RM 5</span>
-                            <span class="original-price">RM 33</span>
-                            <span class="discount-badge">85% OFF</span>
-                        </div>
-                        <button class="btn-add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-            </div>
+
+    <!-- Config -->
+    <section class="rounded-2xl bg-white p-5 shadow space-y-4">
+      <h2 class="font-semibold text-lg">配置</h2>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Pixel IDs（用逗号分隔）</label>
+          <input id="pixelIds" class="w-full rounded-xl border p-2" placeholder="1234567890, 9876543210" />
         </div>
+        <div>
+          <label class="block text-sm mb-1">激活链接（每行一个）</label>
+          <textarea id="activateLinks" class="w-full rounded-xl border p-2 h-24" placeholder="https://..."></textarea>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="inline-flex items-center gap-2 text-sm">
+          <input id="autoExtract" type="checkbox" class="h-4 w-4" checked />
+          从链接自动提取 Pixel ID
+        </label>
+        <label class="inline-flex items-center gap-2 text-sm">
+          <input id="parallel" type="number" min="1" max="20" value="6" class="h-8 w-20 rounded border p-1 text-center" />
+          并发数
+        </label>
+        <label class="inline-flex items-center gap-2 text-sm">
+          事件类型
+          <select id="eventType" class="rounded border p-1 h-8">
+            <option value="Register" selected>Register</option>
+            <option value="Purchase">Purchase</option>
+            <!-- 未来可扩展：ViewContent, AddToCart, CompletePayment -->
+          </select>
+        </label>
+        <input id="fileInput" type="file" accept=".txt" class="hidden" />
+        <button id="btnUpload" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm">批量上传 .txt</button>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="btnActivate" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white">激活所有</button>
+        <button id="btnReset" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300">重置</button>
+        <button id="btnExport" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">导出CSV</button>
+        <div id="status" class="text-sm text-slate-500 self-center">状态：待命</div>
+      </div>
     </section>
-    
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-column">
-                    <h3>DapurKita</h3>
-                    <p>Your one-stop shop for premium kitchen products at affordable prices.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
-                    </div>
-                </div>
-                
-                <div class="footer-column">
-                    <h3>Quick Links</h3>
-                    <ul>
-                        <li><a href="#">Home</a></li>
-                        <li><a href="#">Products</a></li>
-                        <li><a href="#">About Us</a></li>
-                        <li><a href="#">Contact</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h3>Customer Service</h3>
-                    <ul>
-                        <li><a href="#">FAQ</a></li>
-                        <li><a href="#">Shipping Policy</a></li>
-                        <li><a href="#">Return Policy</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h3>Contact Us</h3>
-                    <ul>
-                        <li><i class="fas fa-map-marker-alt"></i> 123 Kitchen Street, KL</li>
-                        <li><i class="fas fa-phone"></i> +60 12-345 6789</li>
-                        <li><i class="fas fa-envelope"></i> info@dapurkita.com</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <p>&copy; 2023 DapurKita. All Rights Reserved.</p>
-            </div>
-        </div>
+
+    <!-- Results table -->
+    <section class="rounded-2xl bg-white p-5 shadow space-y-3">
+      <h2 class="font-semibold text-lg">结果</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-500">
+              <th class="py-2 pr-4">时间</th>
+              <th class="py-2 pr-4">Pixel ID</th>
+              <th class="py-2 pr-4">事件</th>
+              <th class="py-2 pr-4">状态</th>
+              <th class="py-2 pr-4">说明</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section class="rounded-2xl bg-white p-5 shadow space-y-3">
+      <h2 class="font-semibold text-lg">历史记录（本地）</h2>
+      <div id="history" class="text-sm text-slate-600">暂无记录</div>
+      <button id="btnClearHistory" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm">清空历史</button>
+    </section>
+
+    <footer class="py-8 text-center text-xs text-slate-500">
+      © <span id="brandYear"></span> 你的品牌名 · TikTok Pixel Utility · 仅供内部运维
     </footer>
-    
-    <script>
-        // Mobile Menu Toggle
-        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-        const navLinks = document.querySelector('.nav-links');
-        const authButtons = document.querySelector('.auth-buttons');
-        
-        mobileMenuBtn.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-            authButtons.classList.toggle('active');
-            
-            // Change icon
-            const icon = mobileMenuBtn.querySelector('i');
-            if (navLinks.classList.contains('active')) {
-                icon.classList.remove('fa-bars');
-                icon.classList.add('fa-times');
-            } else {
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
-            }
-        });
-        
-        // Add to cart functionality
-        const addToCartButtons = document.querySelectorAll('.btn-add-to-cart');
-        
-        addToCartButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const productCard = button.closest('.product-card');
-                const productTitle = productCard.querySelector('.product-title').textContent;
-                const productPrice = productCard.querySelector('.current-price').textContent;
-                
-                alert(`${productTitle} (${productPrice}) has been added to your cart!`);
-            });
-        });
-    </script>
+  </div>
+
+<script>
+(function(){
+  const $ = (id)=>document.getElementById(id);
+  const stat = { total:0, success:0, fail:0 };
+  const logs = []; // [{time,id,event,status,msg}]
+  const HISTORY_KEY = 'tt-activator-history-v1';
+
+  const updateStats = ()=>{
+    $('stat-total').textContent = stat.total;
+    $('stat-success').textContent = stat.success;
+    $('stat-fail').textContent = stat.fail;
+    const rate = stat.total ? Math.round(stat.success / (stat.success+stat.fail) * 100) : 0;
+    $('stat-rate').textContent = rate + '%';
+  };
+
+  const addRow = (time, id, event, status, msg)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="py-2 pr-4 whitespace-nowrap">${time}</td>
+      <td class="py-2 pr-4">${id || '-'}</td>
+      <td class="py-2 pr-4">${event}</td>
+      <td class="py-2 pr-4">${status}</td>
+      <td class="py-2 pr-4">${msg || ''}</td>`;
+    $('resultBody').prepend(tr);
+  };
+
+  const saveHistory = ()=>{
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    const entry = { ts: Date.now(), count: stat.total, success: stat.success, fail: stat.fail };
+    history.unshift(entry);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0,50)));
+    renderHistory();
+  };
+
+  const renderHistory = ()=>{
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    if(history.length === 0){ $('history').textContent = '暂无记录'; return; }
+    $('history').innerHTML = history.map(h=>{
+      const d = new Date(h.ts);
+      return `<div class="py-1">[${d.toLocaleString()}] 批次：${h.count}，成功：${h.success}，失败：${h.fail}</div>`;
+    }).join('');
+  };
+
+  const parseInput = ()=>{
+    const ids = ($('pixelIds').value || '')
+      .split(',')
+      .map(s=>s.trim())
+      .filter(Boolean);
+
+    const links = ($('activateLinks').value || '')
+      .split('\n')
+      .map(s=>s.trim())
+      .filter(Boolean);
+
+    let extractedIds = [];
+    if ($('autoExtract').checked) {
+      for(const u of links){
+        const m = u.match(/pixel_id=([0-9]+)/i);
+        if(m) extractedIds.push(m[1]);
+      }
+    }
+    const allIds = [...new Set([...ids, ...extractedIds])];
+    return { allIds, links };
+  };
+
+  // 模拟激活：优先使用 sendBeacon，其次 image ping，再次 fetch(no-cors)
+  const firePixel = (pixelId, eventType)=>{
+    return new Promise((resolve)=>{
+      const ts = Date.now();
+      // 这是示意URL：真实路径依据你的激活链接/格式调整
+      // 例如官方像素脚本里经常会走像素上报端点，具体以你的“激活链接”模板为准。
+      const url = `https://analytics.tiktok.com/i18n/pixel/activate?pixel_id=${encodeURIComponent(pixelId)}&event=${encodeURIComponent(eventType)}&ts=${ts}`;
+
+      let done = false;
+      const finish = (ok, msg)=>{
+        if(done) return; done = true;
+        resolve({ ok, msg });
+      };
+
+      // 尝试 sendBeacon
+      try{
+        const ok = navigator.sendBeacon(url);
+        if(ok) return finish(true, 'sendBeacon');
+      }catch(e){ /* ignore */ }
+
+      // 尝试 image ping
+      try{
+        const img = new Image();
+        img.onload = ()=>finish(true, 'image');
+        img.onerror = ()=>finish(false, 'image-error');
+        img.src = url + '&_=' + Math.random();
+        // 给 3 秒超时
+        setTimeout(()=>finish(true, 'image-timeout-assumed'), 3000);
+        return;
+      }catch(e){ /* ignore */ }
+
+      // 退化 fetch no-cors
+      try{
+        fetch(url, { mode: 'no-cors' })
+          .then(()=>finish(true, 'fetch-nocors'))
+          .catch(()=>finish(false, 'fetch-error'));
+      }catch(e){
+        finish(false, 'exception');
+      }
+    });
+  };
+
+  const pLimit = (limit, arr, iteratorFn)=>{
+    const ret = [];
+    const executing = new Set();
+    for(const item of arr){
+      const p = Promise.resolve().then(()=>iteratorFn(item));
+      ret.push(p);
+      executing.add(p);
+      const clean = ()=>executing.delete(p);
+      p.then(clean).catch(clean);
+      if(executing.size >= limit){
+        await Promise.race(executing);
+      }
+    }
+    return Promise.all(ret);
+  };
+
+  // 由于 pLimit 用到了 await/race，这里将其改为异步函数写法
+})();
+</script>
+<script>
+(async function(){
+  const $ = (id)=>document.getElementById(id);
+  const statusEl = $('status');
+  const stats = { total:0, success:0, fail:0 };
+  const updateStats = ()=>{
+    $('stat-total').textContent = stats.total;
+    $('stat-success').textContent = stats.success;
+    $('stat-fail').textContent = stats.fail;
+    const rate = (stats.success + stats.fail) ? Math.round(stats.success/(stats.success+stats.fail)*100) : 0;
+    $('stat-rate').textContent = rate + '%';
+  };
+
+  const addRow = (row)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="py-2 pr-4 whitespace-nowrap">${new Date().toLocaleString()}</td>
+      <td class="py-2 pr-4">${row.id || '-'}</td>
+      <td class="py-2 pr-4">${row.event}</td>
+      <td class="py-2 pr-4">${row.ok ? '成功' : '失败'}</td>
+      <td class="py-2 pr-4">${row.msg || ''}</td>
+    `;
+    document.getElementById('resultBody').prepend(tr);
+  };
+
+  const saveHistory = ()=>{
+    const key='tt-activator-history-v1';
+    const list = JSON.parse(localStorage.getItem(key) || '[]');
+    list.unshift({ ts: Date.now(), total: stats.total, success: stats.success, fail: stats.fail });
+    localStorage.setItem(key, JSON.stringify(list.slice(0,50)));
+    renderHistory();
+  };
+
+  const renderHistory = ()=>{
+    const key='tt-activator-history-v1';
+    const list = JSON.parse(localStorage.getItem(key) || '[]');
+    const box = document.getElementById('history');
+    if(list.length===0){ box.textContent='暂无记录'; return; }
+    box.innerHTML = list.map(x=>{
+      const d = new Date(x.ts).toLocaleString();
+      return `<div class="py-1">[${d}] 批次:${x.total} 成功:${x.success} 失败:${x.fail}</div>`;
+    }).join('');
+  };
+
+  function parseInput(){
+    const idsInput = document.getElementById('pixelIds').value.trim();
+    const linksInput = document.getElementById('activateLinks').value.trim();
+    const autoExtract = document.getElementById('autoExtract').checked;
+
+    const ids = idsInput ? idsInput.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    const links = linksInput ? linksInput.split('\n').map(s=>s.trim()).filter(Boolean) : [];
+
+    let extracted = [];
+    if(autoExtract){
+      for(const u of links){
+        const m = u.match(/pixel_id=([0-9]+)/i);
+        if(m) extracted.push(m[1]);
+      }
+    }
+    return Array.from(new Set([...ids, ...extracted]));
+  }
+
+  function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+  async function firePixel(pixelId, eventType){
+    const ts = Date.now();
+    const url = `https://analytics.tiktok.com/i18n/pixel/activate?pixel_id=${encodeURIComponent(pixelId)}&event=${encodeURIComponent(eventType)}&ts=${ts}`;
+
+    // 1) sendBeacon
+    try{
+      if(navigator.sendBeacon && navigator.sendBeacon(url)){
+        return { ok:true, msg:'sendBeacon' };
+      }
+    }catch(e){}
+
+    // 2) image ping + 2.5s 超时
+    try{
+      await new Promise((resolve,reject)=>{
+        const img = new Image();
+        let settled = false;
+        const finish = (ok,msg)=>{ if(settled) return; settled=true; ok?resolve(msg):reject(new Error(msg)); };
+        img.onload = ()=>finish(true,'image');
+        img.onerror = ()=>finish(false,'image-error');
+        img.src = url + '&_=' + Math.random();
+        setTimeout(()=>finish(true,'image-timeout-assumed'), 2500);
+      });
+      return { ok:true, msg:'image' };
+    }catch(e){}
+
+    // 3) fetch no-cors 兜底
+    try{
+      await fetch(url, { mode:'no-cors' });
+      return { ok:true, msg:'fetch-nocors' };
+    }catch(e){
+      return { ok:false, msg:'fetch-error' };
+    }
+  }
+
+  async function runBatch(ids, eventType, concurrency){
+    const queue = [...ids];
+    const workers = new Array(Math.min(concurrency, queue.length)).fill(0).map(()=>worker());
+    async function worker(){
+      while(queue.length){
+        const id = queue.shift();
+        statusEl.textContent = `状态：激活 ${id} 中...（剩余 ${queue.length}）`;
+        const res = await firePixel(id, eventType);
+        if(res.ok) stats.success++; else stats.fail++;
+        stats.total++;
+        updateStats();
+        addRow({ id, event:eventType, ok:res.ok, msg:res.msg });
+        await sleep(120); // 轻微节流
+      }
+    }
+    await Promise.all(workers);
+  }
+
+  document.getElementById('btnUpload').addEventListener('click', ()=>document.getElementById('fileInput').click());
+  document.getElementById('fileInput').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const text = await file.text();
+    const lines = text.split('\n').map(s=>s.trim()).filter(Boolean);
+    // 智能识别：既可能是ID也可能是链接
+    const ids = [];
+    for(const line of lines){
+      if(/^[0-9]+$/.test(line)) ids.push(line);
+      const m = line.match(/pixel_id=([0-9]+)/i);
+      if(m) ids.push(m[1]);
+    }
+    const uniq = Array.from(new Set(ids));
+    const existIds = document.getElementById('pixelIds').value.trim();
+    document.getElementById('pixelIds').value = (existIds ? existIds + ', ' : '') + uniq.join(', ');
+  });
+
+  document.getElementById('btnActivate').addEventListener('click', async ()=>{
+    const ids = parseInput();
+    const eventType = document.getElementById('eventType').value;
+    const concurrency = Math.max(1, Math.min(20, parseInt(document.getElementById('parallel').value||'6', 10)));
+
+    if(ids.length === 0){
+      alert('请至少提供一个 Pixel ID 或激活链接'); return;
+    }
+    // reset stats in UI
+    stats.total = 0; stats.success = 0; stats.fail = 0; updateStats();
+    document.getElementById('resultBody').innerHTML = '';
+
+    statusEl.textContent = '状态：开始并行激活...';
+    await runBatch(ids, eventType, concurrency);
+    statusEl.textContent = '状态：完成';
+    saveHistory();
+  });
+
+  document.getElementById('btnReset').addEventListener('click', ()=>{
+    document.getElementById('pixelIds').value = '';
+    document.getElementById('activateLinks').value = '';
+    statusEl.textContent = '状态：已重置';
+  });
+
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    const rows = Array.from(document.querySelectorAll('#resultBody tr')).reverse().map(tr=>{
+      const tds = tr.querySelectorAll('td');
+      return [tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].textContent, tds[4].textContent];
+    });
+    const header = ['时间','Pixel ID','事件','状态','说明'];
+    const csv = [header, ...rows].map(r=>r.map(x=>`"${(x||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `tiktok_pixel_logs_${Date.now()}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('btnClearHistory').addEventListener('click', ()=>{
+    localStorage.removeItem('tt-activator-history-v1');
+    renderHistory();
+  });
+
+  document.getElementById('brandYear').textContent = new Date().getFullYear();
+  renderHistory();
+})();
+</script>
 </body>
 </html>
