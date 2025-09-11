@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TikTok 多像素批量激活 · 新版</title>
+  <title>TikTok 多像素批量激活 · Pro</title>
+  <meta name="description" content="批量激活多个 TikTok Pixel 的 Register/Purchase 等事件，支持并行、叠加统计、CSV 导出与本地历史。">
   <script src="https://cdn.tailwindcss.com"></script>
-  <meta name="description" content="批量激活多个 TikTok Pixel 的 Register / Purchase 等事件，支持并行、批量上传、历史记录与CSV导出。">
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
   <div class="max-w-5xl mx-auto p-6 space-y-6">
@@ -17,7 +17,7 @@
     <!-- Stats -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="rounded-2xl bg-white p-4 shadow">
-        <div class="text-xs text-slate-500">总像素</div>
+        <div class="text-xs text-slate-500">总像素（本批）</div>
         <div id="stat-total" class="text-2xl font-semibold">0</div>
       </div>
       <div class="rounded-2xl bg-white p-4 shadow">
@@ -54,18 +54,31 @@
           <input id="autoExtract" type="checkbox" class="h-4 w-4" checked />
           从链接自动提取 Pixel ID
         </label>
+
+        <label class="inline-flex items-center gap-2 text-sm">
+          <input id="accumulate" type="checkbox" class="h-4 w-4" checked />
+          叠加统计（不重置）
+        </label>
+
+        <label class="inline-flex items-center gap-2 text-sm">
+          <input id="allowDuplicate" type="checkbox" class="h-4 w-4" />
+          允许重复激活同一 Pixel
+        </label>
+
         <label class="inline-flex items-center gap-2 text-sm">
           <input id="parallel" type="number" min="1" max="20" value="6" class="h-8 w-20 rounded border p-1 text-center" />
           并发数
         </label>
+
         <label class="inline-flex items-center gap-2 text-sm">
           事件类型
           <select id="eventType" class="rounded border p-1 h-8">
             <option value="Register" selected>Register</option>
             <option value="Purchase">Purchase</option>
-            <!-- 未来可扩展：ViewContent, AddToCart, CompletePayment -->
+            <!-- 可扩展：ViewContent, AddToCart, CompletePayment 等 -->
           </select>
         </label>
+
         <input id="fileInput" type="file" accept=".txt" class="hidden" />
         <button id="btnUpload" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm">批量上传 .txt</button>
       </div>
@@ -111,178 +124,57 @@
 
 <script>
 (function(){
-  const $ = (id)=>document.getElementById(id);
-  const stat = { total:0, success:0, fail:0 };
-  const logs = []; // [{time,id,event,status,msg}]
-  const HISTORY_KEY = 'tt-activator-history-v1';
-
-  const updateStats = ()=>{
-    $('stat-total').textContent = stat.total;
-    $('stat-success').textContent = stat.success;
-    $('stat-fail').textContent = stat.fail;
-    const rate = stat.total ? Math.round(stat.success / (stat.success+stat.fail) * 100) : 0;
-    $('stat-rate').textContent = rate + '%';
-  };
-
-  const addRow = (time, id, event, status, msg)=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="py-2 pr-4 whitespace-nowrap">${time}</td>
-      <td class="py-2 pr-4">${id || '-'}</td>
-      <td class="py-2 pr-4">${event}</td>
-      <td class="py-2 pr-4">${status}</td>
-      <td class="py-2 pr-4">${msg || ''}</td>`;
-    $('resultBody').prepend(tr);
-  };
-
-  const saveHistory = ()=>{
-    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    const entry = { ts: Date.now(), count: stat.total, success: stat.success, fail: stat.fail };
-    history.unshift(entry);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0,50)));
-    renderHistory();
-  };
-
-  const renderHistory = ()=>{
-    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    if(history.length === 0){ $('history').textContent = '暂无记录'; return; }
-    $('history').innerHTML = history.map(h=>{
-      const d = new Date(h.ts);
-      return `<div class="py-1">[${d.toLocaleString()}] 批次：${h.count}，成功：${h.success}，失败：${h.fail}</div>`;
-    }).join('');
-  };
-
-  const parseInput = ()=>{
-    const ids = ($('pixelIds').value || '')
-      .split(',')
-      .map(s=>s.trim())
-      .filter(Boolean);
-
-    const links = ($('activateLinks').value || '')
-      .split('\n')
-      .map(s=>s.trim())
-      .filter(Boolean);
-
-    let extractedIds = [];
-    if ($('autoExtract').checked) {
-      for(const u of links){
-        const m = u.match(/pixel_id=([0-9]+)/i);
-        if(m) extractedIds.push(m[1]);
-      }
-    }
-    const allIds = [...new Set([...ids, ...extractedIds])];
-    return { allIds, links };
-  };
-
-  // 模拟激活：优先使用 sendBeacon，其次 image ping，再次 fetch(no-cors)
-  const firePixel = (pixelId, eventType)=>{
-    return new Promise((resolve)=>{
-      const ts = Date.now();
-      // 这是示意URL：真实路径依据你的激活链接/格式调整
-      // 例如官方像素脚本里经常会走像素上报端点，具体以你的“激活链接”模板为准。
-      const url = `https://analytics.tiktok.com/i18n/pixel/activate?pixel_id=${encodeURIComponent(pixelId)}&event=${encodeURIComponent(eventType)}&ts=${ts}`;
-
-      let done = false;
-      const finish = (ok, msg)=>{
-        if(done) return; done = true;
-        resolve({ ok, msg });
-      };
-
-      // 尝试 sendBeacon
-      try{
-        const ok = navigator.sendBeacon(url);
-        if(ok) return finish(true, 'sendBeacon');
-      }catch(e){ /* ignore */ }
-
-      // 尝试 image ping
-      try{
-        const img = new Image();
-        img.onload = ()=>finish(true, 'image');
-        img.onerror = ()=>finish(false, 'image-error');
-        img.src = url + '&_=' + Math.random();
-        // 给 3 秒超时
-        setTimeout(()=>finish(true, 'image-timeout-assumed'), 3000);
-        return;
-      }catch(e){ /* ignore */ }
-
-      // 退化 fetch no-cors
-      try{
-        fetch(url, { mode: 'no-cors' })
-          .then(()=>finish(true, 'fetch-nocors'))
-          .catch(()=>finish(false, 'fetch-error'));
-      }catch(e){
-        finish(false, 'exception');
-      }
-    });
-  };
-
-  const pLimit = (limit, arr, iteratorFn)=>{
-    const ret = [];
-    const executing = new Set();
-    for(const item of arr){
-      const p = Promise.resolve().then(()=>iteratorFn(item));
-      ret.push(p);
-      executing.add(p);
-      const clean = ()=>executing.delete(p);
-      p.then(clean).catch(clean);
-      if(executing.size >= limit){
-        await Promise.race(executing);
-      }
-    }
-    return Promise.all(ret);
-  };
-
-  // 由于 pLimit 用到了 await/race，这里将其改为异步函数写法
-})();
-</script>
-<script>
-(async function(){
+  // 小工具
   const $ = (id)=>document.getElementById(id);
   const statusEl = $('status');
+
+  // 统计
   const stats = { total:0, success:0, fail:0 };
-  const updateStats = ()=>{
+  function updateStats(){
     $('stat-total').textContent = stats.total;
     $('stat-success').textContent = stats.success;
     $('stat-fail').textContent = stats.fail;
     const rate = (stats.success + stats.fail) ? Math.round(stats.success/(stats.success+stats.fail)*100) : 0;
     $('stat-rate').textContent = rate + '%';
-  };
+  }
 
-  const addRow = (row)=>{
+  // 表格
+  function addRow({ id, event, ok, msg }){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="py-2 pr-4 whitespace-nowrap">${new Date().toLocaleString()}</td>
-      <td class="py-2 pr-4">${row.id || '-'}</td>
-      <td class="py-2 pr-4">${row.event}</td>
-      <td class="py-2 pr-4">${row.ok ? '成功' : '失败'}</td>
-      <td class="py-2 pr-4">${row.msg || ''}</td>
+      <td class="py-2 pr-4">${id || '-'}</td>
+      <td class="py-2 pr-4">${event}</td>
+      <td class="py-2 pr-4">${ok ? '成功' : '失败'}</td>
+      <td class="py-2 pr-4">${msg || ''}</td>
     `;
-    document.getElementById('resultBody').prepend(tr);
-  };
+    $('resultBody').prepend(tr);
+  }
 
-  const saveHistory = ()=>{
-    const key='tt-activator-history-v1';
-    const list = JSON.parse(localStorage.getItem(key) || '[]');
+  // 历史
+  function saveHistory(){
+    const KEY='tt-activator-history-v1';
+    const list = JSON.parse(localStorage.getItem(KEY) || '[]');
     list.unshift({ ts: Date.now(), total: stats.total, success: stats.success, fail: stats.fail });
-    localStorage.setItem(key, JSON.stringify(list.slice(0,50)));
+    localStorage.setItem(KEY, JSON.stringify(list.slice(0,50)));
     renderHistory();
-  };
-
-  const renderHistory = ()=>{
-    const key='tt-activator-history-v1';
-    const list = JSON.parse(localStorage.getItem(key) || '[]');
-    const box = document.getElementById('history');
+  }
+  function renderHistory(){
+    const KEY='tt-activator-history-v1';
+    const list = JSON.parse(localStorage.getItem(KEY) || '[]');
+    const box = $('history');
     if(list.length===0){ box.textContent='暂无记录'; return; }
     box.innerHTML = list.map(x=>{
       const d = new Date(x.ts).toLocaleString();
       return `<div class="py-1">[${d}] 批次:${x.total} 成功:${x.success} 失败:${x.fail}</div>`;
     }).join('');
-  };
+  }
 
-  function parseInput(){
-    const idsInput = document.getElementById('pixelIds').value.trim();
-    const linksInput = document.getElementById('activateLinks').value.trim();
-    const autoExtract = document.getElementById('autoExtract').checked;
+  // 输入解析（可选去重）
+  function parseInput(allowDuplicate){
+    const idsInput = $('pixelIds').value.trim();
+    const linksInput = $('activateLinks').value.trim();
+    const autoExtract = $('autoExtract').checked;
 
     const ids = idsInput ? idsInput.split(',').map(s=>s.trim()).filter(Boolean) : [];
     const links = linksInput ? linksInput.split('\n').map(s=>s.trim()).filter(Boolean) : [];
@@ -294,23 +186,25 @@
         if(m) extracted.push(m[1]);
       }
     }
-    return Array.from(new Set([...ids, ...extracted]));
+    const all = [...ids, ...extracted];
+    return allowDuplicate ? all : Array.from(new Set(all));
   }
 
-  function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+  // 轻节流
+  const sleep = (ms)=>new Promise(r=>setTimeout(r, ms));
 
+  // 触发像素（带 nonce & no-store）
   async function firePixel(pixelId, eventType){
     const ts = Date.now();
-    const url = `https://analytics.tiktok.com/i18n/pixel/activate?pixel_id=${encodeURIComponent(pixelId)}&event=${encodeURIComponent(eventType)}&ts=${ts}`;
+    const nonce = Math.random().toString(36).slice(2);
+    const url = `https://analytics.tiktok.com/i18n/pixel/activate?pixel_id=${encodeURIComponent(pixelId)}&event=${encodeURIComponent(eventType)}&ts=${ts}&nonce=${nonce}`;
 
-    // 1) sendBeacon
     try{
       if(navigator.sendBeacon && navigator.sendBeacon(url)){
         return { ok:true, msg:'sendBeacon' };
       }
     }catch(e){}
 
-    // 2) image ping + 2.5s 超时
     try{
       await new Promise((resolve,reject)=>{
         const img = new Image();
@@ -324,15 +218,15 @@
       return { ok:true, msg:'image' };
     }catch(e){}
 
-    // 3) fetch no-cors 兜底
     try{
-      await fetch(url, { mode:'no-cors' });
+      await fetch(url, { mode:'no-cors', cache:'no-store' });
       return { ok:true, msg:'fetch-nocors' };
     }catch(e){
       return { ok:false, msg:'fetch-error' };
     }
   }
 
+  // 并发执行队列
   async function runBatch(ids, eventType, concurrency){
     const queue = [...ids];
     const workers = new Array(Math.min(concurrency, queue.length)).fill(0).map(()=>worker());
@@ -341,45 +235,48 @@
         const id = queue.shift();
         statusEl.textContent = `状态：激活 ${id} 中...（剩余 ${queue.length}）`;
         const res = await firePixel(id, eventType);
-        if(res.ok) stats.success++; else stats.fail++;
+        res.ok ? (stats.success++) : (stats.fail++);
         stats.total++;
         updateStats();
         addRow({ id, event:eventType, ok:res.ok, msg:res.msg });
-        await sleep(120); // 轻微节流
+        await sleep(200 + Math.random()*150); // 200~350ms
       }
     }
     await Promise.all(workers);
   }
 
-  document.getElementById('btnUpload').addEventListener('click', ()=>document.getElementById('fileInput').click());
-  document.getElementById('fileInput').addEventListener('change', async (e)=>{
+  // 事件绑定
+  $('btnUpload').addEventListener('click', ()=>$('fileInput').click());
+  $('fileInput').addEventListener('change', async (e)=>{
     const file = e.target.files[0];
     if(!file) return;
     const text = await file.text();
     const lines = text.split('\n').map(s=>s.trim()).filter(Boolean);
-    // 智能识别：既可能是ID也可能是链接
     const ids = [];
     for(const line of lines){
       if(/^[0-9]+$/.test(line)) ids.push(line);
       const m = line.match(/pixel_id=([0-9]+)/i);
       if(m) ids.push(m[1]);
     }
-    const uniq = Array.from(new Set(ids));
-    const existIds = document.getElementById('pixelIds').value.trim();
-    document.getElementById('pixelIds').value = (existIds ? existIds + ', ' : '') + uniq.join(', ');
+    const exist = $('pixelIds').value.trim();
+    $('pixelIds').value = (exist ? exist + ', ' : '') + Array.from(new Set(ids)).join(', ');
   });
 
-  document.getElementById('btnActivate').addEventListener('click', async ()=>{
-    const ids = parseInput();
-    const eventType = document.getElementById('eventType').value;
-    const concurrency = Math.max(1, Math.min(20, parseInt(document.getElementById('parallel').value||'6', 10)));
+  $('btnActivate').addEventListener('click', async ()=>{
+    const accumulate   = $('accumulate').checked;
+    const allowDup     = $('allowDuplicate').checked;
+    const ids          = parseInput(allowDup);
+    const eventType    = $('eventType').value;
+    const concurrency  = Math.max(1, Math.min(20, parseInt(($('parallel').value||'6'), 10)));
 
-    if(ids.length === 0){
-      alert('请至少提供一个 Pixel ID 或激活链接'); return;
+    if(ids.length === 0){ alert('请至少提供一个 Pixel ID 或激活链接'); return; }
+
+    // 只有非叠加模式才清零
+    if(!accumulate){
+      stats.total = 0; stats.success = 0; stats.fail = 0;
+      updateStats();
+      $('resultBody').innerHTML = '';
     }
-    // reset stats in UI
-    stats.total = 0; stats.success = 0; stats.fail = 0; updateStats();
-    document.getElementById('resultBody').innerHTML = '';
 
     statusEl.textContent = '状态：开始并行激活...';
     await runBatch(ids, eventType, concurrency);
@@ -387,13 +284,13 @@
     saveHistory();
   });
 
-  document.getElementById('btnReset').addEventListener('click', ()=>{
-    document.getElementById('pixelIds').value = '';
-    document.getElementById('activateLinks').value = '';
+  $('btnReset').addEventListener('click', ()=>{
+    $('pixelIds').value = '';
+    $('activateLinks').value = '';
     statusEl.textContent = '状态：已重置';
   });
 
-  document.getElementById('btnExport').addEventListener('click', ()=>{
+  $('btnExport').addEventListener('click', ()=>{
     const rows = Array.from(document.querySelectorAll('#resultBody tr')).reverse().map(tr=>{
       const tds = tr.querySelectorAll('td');
       return [tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].textContent, tds[4].textContent];
@@ -408,12 +305,12 @@
     URL.revokeObjectURL(url);
   });
 
-  document.getElementById('btnClearHistory').addEventListener('click', ()=>{
+  $('btnClearHistory').addEventListener('click', ()=>{
     localStorage.removeItem('tt-activator-history-v1');
     renderHistory();
   });
 
-  document.getElementById('brandYear').textContent = new Date().getFullYear();
+  $('brandYear').textContent = new Date().getFullYear();
   renderHistory();
 })();
 </script>
