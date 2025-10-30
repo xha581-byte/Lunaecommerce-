@@ -2,343 +2,242 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mavis and Aerys Co · TikTok 多像素批量激活 · Pro</title>
-  <meta name="description" content="Mavis and Aerys Co · 批量激活多个 TikTok Pixel 的 Register/Purchase 等事件，支持并行、叠加统计、CSV 导出与本地历史。">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Mobile Pixel Event Tester</title>
   <style>
-    :root{
-      --brand-primary-600:#7c3aed; /* 主色 */
-      --brand-primary-700:#6d28d9;
-      --brand-ring:#c4b5fd;
+    :root { --gap: 14px; --radius: 14px; --shadow: 0 8px 24px rgba(0,0,0,.08); --border: #ececec; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, system-ui, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; background:#fafafa; color:#222; }
+    header { position: sticky; top: 0; background: #fff; padding: 12px var(--gap); border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; z-index: 10; }
+    header input { flex: 1; height: 44px; border:1px solid var(--border); border-radius: 10px; padding: 0 12px; }
+    header button { height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: #222; color:#fff; }
+    main { padding: var(--gap); max-width: 760px; margin: 0 auto; }
+    .card { background:#fff; border:1px solid var(--border); border-radius: var(--radius); padding: var(--gap); box-shadow: var(--shadow); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); }
+    .stack { display: grid; gap: 10px; }
+    label { font-size: 13px; opacity: .8; }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="number"], select {
+      width: 100%; height: 44px; border:1px solid var(--border); border-radius: 10px; padding: 0 12px;
     }
-    .btn-brand{ background:var(--brand-primary-600); color:#fff; }
-    .btn-brand:hover{ background:var(--brand-primary-700); }
-    .ring-brand{ box-shadow: 0 0 0 3px var(--brand-ring); }
+    .btn { width: 100%; height: 48px; border:0; border-radius: 12px; background:#111; color:#fff; font-weight: 600; }
+    .btn.secondary { background:#f2f2f2; color:#111; border:1px solid var(--border); }
+    .grid { display:grid; gap: var(--gap); }
+    .pill { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius: 999px; border:1px solid var(--border); background:#fff; font-size: 12px; }
+    .log { max-height: 300px; overflow:auto; font-family: ui-monospace, Menlo, Consolas, monospace; background:#0b1220; color:#d4f2ff; padding: var(--gap); border-radius: var(--radius); }
+    .log .line { padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
+    .footer { margin-top: 16px; font-size: 12px; opacity:.7; }
   </style>
-</head>
-<body class="min-h-screen bg-slate-50 text-slate-900">
-  <!-- ===== BRAND CONFIG ===== -->
+  <!-- Meta Pixel Code -->
   <script>
-    const BRAND = {
-      name: "Mavis and Aerys Co",
-      logo: "", // 可填你的 Logo 直链
-      year: new Date().getFullYear()
-    };
-  </script>
-
-  <div class="max-w-5xl mx-auto p-6 space-y-6">
-    <header class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img id="brandLogo" alt="logo" class="h-8 hidden" referrerpolicy="no-referrer" />
-        <h1 class="text-2xl md:text-3xl font-bold"><span id="brandName"></span> · TikTok 多像素批量激活</h1>
-      </div>
-      <div class="text-sm text-slate-500">仅供被授权的广告账户运维使用</div>
-    </header>
-
-    <!-- Stats -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="rounded-2xl bg-white p-4 shadow">
-        <div class="text-xs text-slate-500">总像素（本批）</div>
-        <div id="stat-total" class="text-2xl font-semibold">0</div>
-      </div>
-      <div class="rounded-2xl bg-white p-4 shadow">
-        <div class="text-xs text-slate-500">已激活</div>
-        <div id="stat-success" class="text-2xl font-semibold">0</div>
-      </div>
-      <div class="rounded-2xl bg-white p-4 shadow">
-        <div class="text-xs text-slate-500">失败</div>
-        <div id="stat-fail" class="text-2xl font-semibold">0</div>
-      </div>
-      <div class="rounded-2xl bg-white p-4 shadow">
-        <div class="text-xs text-slate-500">成功率</div>
-        <div id="stat-rate" class="text-2xl font-semibold">0%</div>
-      </div>
-    </section>
-
-    <!-- Config -->
-    <section class="rounded-2xl bg-white p-5 shadow space-y-4">
-      <h2 class="font-semibold text-lg">配置</h2>
-
-      <div class="grid md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm mb-1">Pixel IDs（用逗号分隔）</label>
-          <input id="pixelIds" class="w-full rounded-xl border p-2 focus:outline-none focus:ring-4 ring-brand" placeholder="1234567890, 9876543210" />
-        </div>
-        <div>
-          <label class="block text-sm mb-1">激活链接（每行一个）</label>
-          <textarea id="activateLinks" class="w-full rounded-xl border p-2 h-24 focus:outline-none focus:ring-4 ring-brand" placeholder="https://..."></textarea>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-3">
-        <label class="inline-flex items-center gap-2 text-sm">
-          <input id="autoExtract" type="checkbox" class="h-4 w-4" checked />
-          从链接自动提取 Pixel ID
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm">
-          <input id="accumulate" type="checkbox" class="h-4 w-4" checked />
-          叠加统计（不重置）
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm">
-          <input id="allowDuplicate" type="checkbox" class="h-4 w-4" />
-          允许重复激活同一 Pixel
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm">
-          <input id="parallel" type="number" min="1" max="20" value="6" class="h-8 w-20 rounded border p-1 text-center" />
-          并发数
-        </label>
-        <label class="inline-flex items-center gap-2 text-sm">
-          事件类型
-          <select id="eventType" class="rounded border p-1 h-8">
-            <option value="Register" selected>Register</option>
-            <option value="Purchase">Purchase</option>
-          </select>
-        </label>
-
-        <input id="fileInput" type="file" accept=".txt" class="hidden" />
-        <button id="btnUpload" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm">批量上传 .txt</button>
-      </div>
-
-      <div class="flex flex-wrap gap-3">
-        <button id="btnActivate" class="px-4 py-2 rounded-xl btn-brand">激活所有</button>
-        <button id="btnReset" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300">重置</button>
-        <button id="btnExport" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">导出CSV</button>
-        <button id="btnSelfTest" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-black text-white">自检（不连TikTok）</button>
-        <div id="status" class="text-sm text-slate-500 self-center">状态：待命</div>
-      </div>
-    </section>
-
-    <!-- Results table -->
-    <section class="rounded-2xl bg-white p-5 shadow space-y-3">
-      <h2 class="font-semibold text-lg">结果</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="text-left text-slate-500">
-              <th class="py-2 pr-4">时间</th>
-              <th class="py-2 pr-4">Pixel ID</th>
-              <th class="py-2 pr-4">事件</th>
-              <th class="py-2 pr-4">状态</th>
-              <th class="py-2 pr-4">说明</th>
-            </tr>
-          </thead>
-          <tbody id="resultBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- History -->
-    <section class="rounded-2xl bg-white p-5 shadow space-y-3">
-      <h2 class="font-semibold text-lg">历史记录（本地）</h2>
-      <div id="history" class="text-sm text-slate-600">暂无记录</div>
-      <button id="btnClearHistory" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm">清空历史</button>
-    </section>
-
-    <footer class="py-8 text-center text-xs text-slate-500">
-      © <span id="brandYear"></span> <span id="brandNameFoot"></span> · TikTok Pixel Utility · 仅供内部运维
-    </footer>
-  </div>
-
-<script>
-(function(){
-  const $ = (id)=>document.getElementById(id);
-
-  // ===== 品牌渲染 =====
-  $('brandName').textContent = BRAND.name;
-  $('brandNameFoot').textContent = BRAND.name;
-  $('brandYear').textContent = BRAND.year;
-  if (BRAND.logo) { const el=$('brandLogo'); el.src=BRAND.logo; el.classList.remove('hidden'); }
-
-  // ===== 变量 =====
-  const statusEl = $('status');
-  const stats = { total:0, success:0, fail:0 };
-
-  // ===== UI工具 =====
-  function updateStats(){
-    $('stat-total').textContent = stats.total;
-    $('stat-success').textContent = stats.success;
-    $('stat-fail').textContent = stats.fail;
-    const rate = (stats.success + stats.fail) ? Math.round(stats.success/(stats.success+stats.fail)*100) : 0;
-    $('stat-rate').textContent = rate + '%';
-  }
-  function addRow({ id, event, ok, msg }){
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="py-2 pr-4 whitespace-nowrap">${new Date().toLocaleString()}</td>
-      <td class="py-2 pr-4">${id || '-'}</td>
-      <td class="py-2 pr-4">${event}</td>
-      <td class="py-2 pr-4">${ok ? '成功' : '失败'}</td>
-      <td class="py-2 pr-4">${msg || ''}</td>`;
-    $('resultBody').prepend(tr);
-  }
-  function saveHistory(){
-    const KEY='tt-activator-history-v1';
-    const list = JSON.parse(localStorage.getItem(KEY) || '[]');
-    list.unshift({ ts: Date.now(), total: stats.total, success: stats.success, fail: stats.fail });
-    localStorage.setItem(KEY, JSON.stringify(list.slice(0,50)));
-    renderHistory();
-  }
-  function renderHistory(){
-    const KEY='tt-activator-history-v1';
-    const list = JSON.parse(localStorage.getItem(KEY) || '[]');
-    const box = $('history');
-    if(list.length===0){ box.textContent='暂无记录'; return; }
-    box.innerHTML = list.map(x=>{
-      const d = new Date(x.ts).toLocaleString();
-      return `<div class="py-1">[${d}] 批次:${x.total} 成功:${x.success} 失败:${x.fail}</div>`;
-    }).join('');
-  }
-  const sleep = (ms)=>new Promise(r=>setTimeout(r, ms));
-
-  // ===== 输入解析 =====
-  function parseInput(allowDuplicate){
-    const idsInput = $('pixelIds').value.trim();
-    const linksInput = $('activateLinks').value.trim();
-    const autoExtract = $('autoExtract').checked;
-
-    const ids = idsInput ? idsInput.split(',').map(s=>s.trim()).filter(Boolean) : [];
-    const links = linksInput ? linksInput.split('\n').map(s=>s.trim()).filter(Boolean) : [];
-
-    let extracted = [];
-    if(autoExtract){
-      for(const u of links){
-        const m = u.match(/pixel_id=([0-9]+)/i);
-        if(m) extracted.push(m[1]);
-      }
+    // 解析 URL 参数
+    function getQuery(name) {
+      const m = new RegExp('[?&]'+name+'=([^&#]*)').exec(location.search);
+      return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
     }
-    const all = [...ids, ...extracted];
-    return allowDuplicate ? all : Array.from(new Set(all));
-  }
 
-  // ===== 触发像素（带 nonce & no-store）=====
-  async function firePixel(pixelId, eventType){
-    const ts = Date.now();
-    const nonce = Math.random().toString(36).slice(2);
-    const url = `https://analytics.tiktok.com/i18n/pixel/activate?pixel_id=${encodeURIComponent(pixelId)}&event=${encodeURIComponent(eventType)}&ts=${ts}&nonce=${nonce}`;
+    // 简单日志
+    function log(msg, data) {
+      const box = document.getElementById('eventLog');
+      const line = document.createElement('div');
+      line.className = 'line';
+      const time = new Date().toLocaleTimeString();
+      let json = '';
+      try { json = data ? ' ' + JSON.stringify(data) : ''; } catch(e){}
+      line.textContent = `[${time}] ${msg}${json}`;
+      box.prepend(line);
+    }
 
-    // 1) sendBeacon
-    try{ if(navigator.sendBeacon && navigator.sendBeacon(url)){ return { ok:true, msg:'sendBeacon' }; } }catch(e){}
+    // 生成一个相对唯一的事件ID（便于事件去重/排查）
+    function genEventId(prefix='evt') {
+      return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+    }
 
-    // 2) image ping（2.5s 乐观成功）
-    try{
-      await new Promise((resolve,reject)=>{
-        const img = new Image();
-        let settled = false;
-        const finish = (ok,msg)=>{ if(settled) return; settled=true; ok?resolve(msg):reject(new Error(msg)); };
-        img.onload = ()=>finish(true,'image');
-        img.onerror = ()=>finish(false,'image-error');
-        img.src = url + '&_=' + Math.random();
-        setTimeout(()=>finish(true,'image-timeout-assumed'), 2500);
+    // 初始化 Pixel
+    function initPixel(pixelId, advancedMatch) {
+      if (!pixelId) {
+        log('⚠️ 请先填入 Pixel ID');
+        return;
+      }
+      // 标准 Meta Pixel 代码
+      !(function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+
+      if (advancedMatch && (advancedMatch.em || advancedMatch.ph)) {
+        // 传入未哈希的 em / ph，像素会在发送前自动做 SHA-256
+        fbq('init', pixelId, advancedMatch);
+        log('✅ Pixel 已初始化（含 Advanced Matching）', advancedMatch);
+      } else {
+        fbq('init', pixelId);
+        log('✅ Pixel 已初始化', { pixelId });
+      }
+      fbq('track', 'PageView', {eventID: genEventId('pageview')});
+      log('📩 触发 PageView');
+      document.getElementById('statusPill').innerText = 'Connected: ' + pixelId;
+      localStorage.setItem('pixel_id', pixelId);
+    }
+
+    // 触发事件
+    function fire(eventName, params={}, isCustom=false) {
+      const method = isCustom ? 'trackCustom' : 'track';
+      const withId = Object.assign({eventID: genEventId(eventName)}, params || {});
+      fbq(method, eventName, withId);
+      log(`🎯 ${isCustom ? 'trackCustom' : 'track'} → ${eventName}`, withId);
+    }
+
+    // 页面加载后处理
+    document.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('pixel_id') || '';
+      const fromQuery = getQuery('pid');
+      const pixel = fromQuery || saved || 'PIXEL_ID_REPLACE_ME';
+      document.getElementById('pixelId').value = pixel === 'PIXEL_ID_REPLACE_ME' ? '' : pixel;
+
+      // 自动初始化（如果 URL 或本地已有像素）
+      if (pixel && pixel !== 'PIXEL_ID_REPLACE_ME') {
+        initPixel(pixel);
+      }
+
+      // 绑定按钮
+      document.getElementById('applyPixel').addEventListener('click', () => {
+        initPixel(document.getElementById('pixelId').value.trim());
       });
-      return { ok:true, msg:'image' };
-    }catch(e){}
 
-    // 3) fetch no-cors
-    try{
-      await fetch(url, { mode:'no-cors', cache:'no-store' });
-      return { ok:true, msg:'fetch-nocors' };
-    }catch(e){
-      return { ok:false, msg:'fetch-error' };
-    }
-  }
+      document.getElementById('applyAM').addEventListener('click', () => {
+        const pixelId = document.getElementById('pixelId').value.trim();
+        const em = document.getElementById('em').value.trim();
+        const ph = document.getElementById('ph').value.trim();
+        initPixel(pixelId, { em: em || undefined, ph: ph || undefined });
+      });
 
-  // ===== 并发执行 =====
-  async function runBatch(ids, eventType, concurrency){
-    const queue = [...ids];
-    const workers = new Array(Math.min(concurrency, queue.length)).fill(0).map(()=>worker());
-    async function worker(){
-      while(queue.length){
-        const id = queue.shift();
-        statusEl.textContent = `状态：激活 ${id} 中...（剩余 ${queue.length}）`;
-        const res = await firePixel(id, eventType);
-        res.ok ? (stats.success++) : (stats.fail++);
-        stats.total++;
-        updateStats();
-        addRow({ id, event:eventType, ok:res.ok, msg:res.msg });
-        await sleep(200 + Math.random()*150);
-      }
-    }
-    await Promise.all(workers);
-  }
+      document.getElementById('btnViewContent').addEventListener('click', () => {
+        fire('ViewContent', {content_name:'Demo Product', content_ids:['SKU-001'], content_type:'product'});
+      });
 
-  // ===== 事件绑定 =====
-  $('btnUpload').addEventListener('click', ()=>$('fileInput').click());
-  $('fileInput').addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const text = await file.text();
-    const lines = text.split('\n').map(s=>s.trim()).filter(Boolean);
-    const ids = [];
-    for(const line of lines){
-      if(/^[0-9]+$/.test(line)) ids.push(line);
-      const m = line.match(/pixel_id=([0-9]+)/i);
-      if(m) ids.push(m[1]);
-    }
-    const exist = $('pixelIds').value.trim();
-    $('pixelIds').value = (exist ? exist + ', ' : '') + Array.from(new Set(ids)).join(', ');
-  });
+      document.getElementById('btnAddToCart').addEventListener('click', () => {
+        fire('AddToCart', {content_ids:['SKU-001'], content_type:'product', value: 19.9, currency: document.getElementById('ccy').value});
+      });
 
-  $('btnActivate').addEventListener('click', async ()=>{
-    try{
-      const accumulate   = $('accumulate').checked;
-      const allowDup     = $('allowDuplicate').checked;
-      const ids          = parseInput(allowDup);
-      const eventType    = $('eventType').value;
-      const concurrency  = Math.max(1, Math.min(20, parseInt(($('parallel').value||'6'), 10)));
+      document.getElementById('btnInitiateCheckout').addEventListener('click', () => {
+        fire('InitiateCheckout', {num_items:1, value: 19.9, currency: document.getElementById('ccy').value});
+      });
 
-      if(ids.length === 0){ alert('请至少提供一个 Pixel ID 或激活链接'); return; }
+      document.getElementById('btnLead').addEventListener('click', () => {
+        const em = document.getElementById('em').value.trim();
+        fire('Lead', em ? { em } : {});
+      });
 
-      if(!accumulate){ stats.total=0; stats.success=0; stats.fail=0; updateStats(); $('resultBody').innerHTML=''; }
+      document.getElementById('btnPurchase').addEventListener('click', () => {
+        const val = parseFloat(document.getElementById('amount').value || '29.9');
+        fire('Purchase', {value: isNaN(val) ? 29.9 : val, currency: document.getElementById('ccy').value});
+      });
 
-      statusEl.textContent = '状态：开始并行激活...';
-      await runBatch(ids, eventType, concurrency);
-      statusEl.textContent = '状态：完成';
-      saveHistory();
-    }catch(err){
-      console.error(err);
-      alert('前端脚本异常：' + err.message);
-    }
-  });
+      document.getElementById('btnCustomActivation').addEventListener('click', () => {
+        fire('Activation', {source:'mobile-test'}, true);
+      });
 
-  $('btnReset').addEventListener('click', ()=>{
-    $('pixelIds').value = '';
-    $('activateLinks').value = '';
-    statusEl.textContent = '状态：已重置';
-  });
+      document.getElementById('btnContact').addEventListener('click', () => {
+        fire('Contact', {method:'whatsapp'});
+      });
 
-  $('btnExport').addEventListener('click', ()=>{
-    const rows = Array.from(document.querySelectorAll('#resultBody tr')).reverse().map(tr=>{
-      const tds = tr.querySelectorAll('td');
-      return [tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].textContent, tds[4].textContent];
+      document.getElementById('btnSubscribe').addEventListener('click', () => {
+        fire('Subscribe', {plan:'basic'});
+      });
+
+      document.getElementById('btnSearch').addEventListener('click', () => {
+        fire('Search', {search_string:'测试关键词'});
+      });
     });
-    const header = ['时间','Pixel ID','事件','状态','说明'];
-    const csv = [header, ...rows].map(r=>r.map(x=>`"${(x||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `tiktok_pixel_logs_${Date.now()}.csv`;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  });
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=PIXEL_ID_REPLACE_ME&ev=PageView&noscript=1"
+  /></noscript>
+</head>
+<body>
+  <header>
+    <span class="pill" id="statusPill">Not connected</span>
+    <input id="pixelId" type="text" inputmode="numeric" placeholder="输入你的 Pixel ID（或用 ?pid=xxx 打开）" />
+    <button id="applyPixel">连接像素</button>
+  </header>
 
-  $('btnClearHistory').addEventListener('click', ()=>{
-    localStorage.removeItem('tt-activator-history-v1');
-    renderHistory();
-  });
+  <main class="grid">
+    <section class="card stack">
+      <h2 style="margin:0;">常用事件（适配移动端）</h2>
+      <div class="row">
+        <button class="btn" id="btnViewContent">ViewContent</button>
+        <button class="btn" id="btnAddToCart">AddToCart</button>
+      </div>
+      <div class="row">
+        <button class="btn" id="btnInitiateCheckout">InitiateCheckout</button>
+        <button class="btn" id="btnLead">Lead</button>
+      </div>
+      <div class="row">
+        <button class="btn" id="btnPurchase">Purchase</button>
+        <button class="btn secondary" id="btnCustomActivation">自定义：Activation</button>
+      </div>
+    </section>
 
-  // —— 自检：绕过网络，直接模拟一次成功、一次失败，验证前端是否工作 ——
-  $('btnSelfTest').addEventListener('click', async ()=>{
-    const before = { ...stats };
-    addRow({ id:'TEST-OK', event:'Register', ok:true,  msg:'self-test' }); stats.success++; stats.total++;
-    addRow({ id:'TEST-NG', event:'Purchase', ok:false, msg:'self-test' }); stats.fail++;    stats.total++;
-    updateStats();
-    statusEl.textContent = '状态：自检已写入两条记录（前端OK）';
-  });
+    <section class="card stack">
+      <h3 style="margin:0;">事件参数（可选）</h3>
+      <div class="row">
+        <div>
+          <label for="amount">金额（用于 Purchase）</label>
+          <input id="amount" type="number" step="0.01" placeholder="例如 29.90" />
+        </div>
+        <div>
+          <label for="ccy">币种</label>
+          <select id="ccy">
+            <option value="MYR" selected>MYR</option>
+            <option value="USD">USD</option>
+            <option value="SGD">SGD</option>
+            <option value="THB">THB</option>
+            <option value="VND">VND</option>
+            <option value="IDR">IDR</option>
+          </select>
+        </div>
+      </div>
+    </section>
 
-  // 初始
-  updateStats(); renderHistory();
-})();
-</script>
+    <section class="card stack">
+      <h3 style="margin:0;">Advanced Matching（可选）</h3>
+      <div class="row">
+        <div>
+          <label for="em">邮箱 em</label>
+          <input id="em" type="email" placeholder="name@example.com" />
+        </div>
+        <div>
+          <label for="ph">手机号 ph（仅数字，含国家码）</label>
+          <input id="ph" type="tel" inputmode="numeric" placeholder="60123456789" />
+        </div>
+      </div>
+      <button class="btn" id="applyAM">应用高级匹配</button>
+      <p class="footer">提示：这里传入未哈希的 em/ph，像素会自动做 SHA-256 再上报。</p>
+    </section>
+
+    <section class="card stack">
+      <h3 style="margin:0;">其它常见事件</h3>
+      <div class="row">
+        <button class="btn secondary" id="btnContact">Contact</button>
+        <button class="btn secondary" id="btnSubscribe">Subscribe</button>
+      </div>
+      <div class="row">
+        <button class="btn secondary" id="btnSearch">Search</button>
+        <button class="btn secondary" onclick="fire('CompleteRegistration')">CompleteRegistration</button>
+      </div>
+    </section>
+
+    <section class="card stack">
+      <h3 style="margin:0;">事件日志</h3>
+      <div id="eventLog" class="log" aria-live="polite"></div>
+      <div class="footer">在 Meta Events Manager 的「Test Events」里也能看到实时事件。</div>
+    </section>
+
+    <section class="card">
+      <div class="footer">
+        仅用于测试/验证像素触发。上线投放请确保隐私政策、Cookie 提示、同意管理等已到位；若需要服务端 <b>Conversions API</b> 去重与更稳的归因，这个页面可配合你们后端加 CAPI（用同一个 <code>eventID</code> 做去重）。
+      </div>
+    </section>
+  </main>
 </body>
 </html>
