@@ -1,243 +1,688 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Mobile Pixel Event Tester</title>
+  <meta charset="UTF-8" />
+  <title>Kwai 广告事件激活后台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    :root { --gap: 14px; --radius: 14px; --shadow: 0 8px 24px rgba(0,0,0,.08); --border: #ececec; }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, system-ui, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; background:#fafafa; color:#222; }
-    header { position: sticky; top: 0; background: #fff; padding: 12px var(--gap); border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; z-index: 10; }
-    header input { flex: 1; height: 44px; border:1px solid var(--border); border-radius: 10px; padding: 0 12px; }
-    header button { height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: #222; color:#fff; }
-    main { padding: var(--gap); max-width: 760px; margin: 0 auto; }
-    .card { background:#fff; border:1px solid var(--border); border-radius: var(--radius); padding: var(--gap); box-shadow: var(--shadow); }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
-    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); }
-    .stack { display: grid; gap: 10px; }
-    label { font-size: 13px; opacity: .8; }
-    input[type="text"], input[type="email"], input[type="tel"], input[type="number"], select {
-      width: 100%; height: 44px; border:1px solid var(--border); border-radius: 10px; padding: 0 12px;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    .btn { width: 100%; height: 48px; border:0; border-radius: 12px; background:#111; color:#fff; font-weight: 600; }
-    .btn.secondary { background:#f2f2f2; color:#111; border:1px solid var(--border); }
-    .grid { display:grid; gap: var(--gap); }
-    .pill { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius: 999px; border:1px solid var(--border); background:#fff; font-size: 12px; }
-    .log { max-height: 300px; overflow:auto; font-family: ui-monospace, Menlo, Consolas, monospace; background:#0b1220; color:#d4f2ff; padding: var(--gap); border-radius: var(--radius); }
-    .log .line { padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
-    .footer { margin-top: 16px; font-size: 12px; opacity:.7; }
+
+    :root {
+      --bg: #f5f5f7;
+      --card-bg: #ffffff;
+      --border: #e0e0e0;
+      --primary: #111827;
+      --primary-soft: #e5e7eb;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --danger: #ef4444;
+      --text-main: #111827;
+      --text-sub: #6b7280;
+      --radius-xl: 18px;
+      --shadow-soft: 0 18px 35px rgba(15, 23, 42, 0.08);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC",
+        "Microsoft YaHei", sans-serif;
+      background: radial-gradient(circle at top, #eef2ff, #f9fafb 55%);
+      min-height: 100vh;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 980px;
+      background: linear-gradient(135deg, #f9fafb, #ffffff);
+      border-radius: 32px;
+      box-shadow: var(--shadow-soft);
+      padding: 28px 28px 24px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      backdrop-filter: blur(12px);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: conic-gradient(
+        from 160deg,
+        #0ea5e9,
+        #a855f7,
+        #f97316,
+        #0ea5e9
+      );
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-logo::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 8px;
+      background: radial-gradient(circle at 10% 0, #ffffff, #e5e7eb);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      font-size: 18px;
+      background: linear-gradient(120deg, #111827, #4b5563);
+      -webkit-background-clip: text;
+      color: transparent;
+      text-transform: uppercase;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .status-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(22, 163, 74, 0.06);
+      color: #15803d;
+      border: 1px solid rgba(22, 163, 74, 0.15);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 840px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      padding: 18px 18px 16px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .card-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    .badge-soft {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.06);
+      color: #1d4ed8;
+      border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+
+    .field-group {
+      margin-bottom: 14px;
+    }
+
+    .field-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .event-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+    }
+
+    .event-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 9px;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      font-size: 12px;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.16s ease-out;
+    }
+
+    .event-item:hover {
+      border-color: rgba(37, 99, 235, 0.5);
+      background: #eff6ff;
+      transform: translateY(-1px);
+    }
+
+    .event-item input {
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    .event-text-main {
+      font-weight: 500;
+      color: #111827;
+    }
+
+    .event-text-sub {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .event-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-left: auto;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mini-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      font-size: 12px;
+      background: #f9fafb;
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+    }
+
+    .mini-btn:hover {
+      background: #e5e7eb;
+    }
+
+    .mini-btn-ghost {
+      background: transparent;
+    }
+
+    .input-chip {
+      flex: 1;
+      min-width: 120px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      display: flex;
+      align-items: center;
+      padding: 6px 10px;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .input-chip input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 60px;
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-main);
+    }
+
+    .input-chip span {
+      white-space: nowrap;
+    }
+
+    .primary-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: radial-gradient(circle at 0 0, #93c5fd, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.35);
+      transition: all 0.16s ease-out;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.45);
+      filter: brightness(1.03);
+    }
+
+    .primary-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35);
+    }
+
+    .primary-btn[disabled] {
+      opacity: 0.7;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .primary-btn-icon {
+      font-size: 16px;
+    }
+
+    .log-box {
+      height: 220px;
+      background: #020617;
+      border-radius: 16px;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      color: #e5e7eb;
+      overflow-y: auto;
+      border: 1px solid rgba(15, 23, 42, 0.8);
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.7);
+    }
+
+    .log-line {
+      margin-bottom: 2px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .log-line.info {
+      color: #e5e7eb;
+    }
+
+    .log-line.success {
+      color: #bbf7d0;
+    }
+
+    .log-line.error {
+      color: #fecaca;
+    }
+
+    .log-tag {
+      color: #818cf8;
+    }
+
+    .log-time {
+      color: #9ca3af;
+    }
+
+    .log-empty {
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    .log-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 6px;
+      gap: 8px;
+    }
+
+    .tiny-btn {
+      background: transparent;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: #9ca3af;
+      font-size: 10px;
+      padding: 3px 7px;
+      cursor: pointer;
+    }
+
+    .tiny-btn:hover {
+      border-color: #e5e7eb;
+      color: #e5e7eb;
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 6px;
+    }
   </style>
-  <!-- Meta Pixel Code -->
-  <script>
-    // 解析 URL 参数
-    function getQuery(name) {
-      const m = new RegExp('[?&]'+name+'=([^&#]*)').exec(location.search);
-      return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
-    }
-
-    // 简单日志
-    function log(msg, data) {
-      const box = document.getElementById('eventLog');
-      const line = document.createElement('div');
-      line.className = 'line';
-      const time = new Date().toLocaleTimeString();
-      let json = '';
-      try { json = data ? ' ' + JSON.stringify(data) : ''; } catch(e){}
-      line.textContent = `[${time}] ${msg}${json}`;
-      box.prepend(line);
-    }
-
-    // 生成一个相对唯一的事件ID（便于事件去重/排查）
-    function genEventId(prefix='evt') {
-      return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-    }
-
-    // 初始化 Pixel
-    function initPixel(pixelId, advancedMatch) {
-      if (!pixelId) {
-        log('⚠️ 请先填入 Pixel ID');
-        return;
-      }
-      // 标准 Meta Pixel 代码
-      !(function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
-
-      if (advancedMatch && (advancedMatch.em || advancedMatch.ph)) {
-        // 传入未哈希的 em / ph，像素会在发送前自动做 SHA-256
-        fbq('init', pixelId, advancedMatch);
-        log('✅ Pixel 已初始化（含 Advanced Matching）', advancedMatch);
-      } else {
-        fbq('init', pixelId);
-        log('✅ Pixel 已初始化', { pixelId });
-      }
-      fbq('track', 'PageView', {eventID: genEventId('pageview')});
-      log('📩 触发 PageView');
-      document.getElementById('statusPill').innerText = 'Connected: ' + pixelId;
-      localStorage.setItem('pixel_id', pixelId);
-    }
-
-    // 触发事件
-    function fire(eventName, params={}, isCustom=false) {
-      const method = isCustom ? 'trackCustom' : 'track';
-      const withId = Object.assign({eventID: genEventId(eventName)}, params || {});
-      fbq(method, eventName, withId);
-      log(`🎯 ${isCustom ? 'trackCustom' : 'track'} → ${eventName}`, withId);
-    }
-
-    // 页面加载后处理
-    document.addEventListener('DOMContentLoaded', () => {
-      const saved = localStorage.getItem('pixel_id') || '';
-      const fromQuery = getQuery('pid');
-      const pixel = fromQuery || saved || 'PIXEL_ID_REPLACE_ME';
-      document.getElementById('pixelId').value = pixel === 'PIXEL_ID_REPLACE_ME' ? '' : pixel;
-
-      // 自动初始化（如果 URL 或本地已有像素）
-      if (pixel && pixel !== 'PIXEL_ID_REPLACE_ME') {
-        initPixel(pixel);
-      }
-
-      // 绑定按钮
-      document.getElementById('applyPixel').addEventListener('click', () => {
-        initPixel(document.getElementById('pixelId').value.trim());
-      });
-
-      document.getElementById('applyAM').addEventListener('click', () => {
-        const pixelId = document.getElementById('pixelId').value.trim();
-        const em = document.getElementById('em').value.trim();
-        const ph = document.getElementById('ph').value.trim();
-        initPixel(pixelId, { em: em || undefined, ph: ph || undefined });
-      });
-
-      document.getElementById('btnViewContent').addEventListener('click', () => {
-        fire('ViewContent', {content_name:'Demo Product', content_ids:['SKU-001'], content_type:'product'});
-      });
-
-      document.getElementById('btnAddToCart').addEventListener('click', () => {
-        fire('AddToCart', {content_ids:['SKU-001'], content_type:'product', value: 19.9, currency: document.getElementById('ccy').value});
-      });
-
-      document.getElementById('btnInitiateCheckout').addEventListener('click', () => {
-        fire('InitiateCheckout', {num_items:1, value: 19.9, currency: document.getElementById('ccy').value});
-      });
-
-      document.getElementById('btnLead').addEventListener('click', () => {
-        const em = document.getElementById('em').value.trim();
-        fire('Lead', em ? { em } : {});
-      });
-
-      document.getElementById('btnPurchase').addEventListener('click', () => {
-        const val = parseFloat(document.getElementById('amount').value || '29.9');
-        fire('Purchase', {value: isNaN(val) ? 29.9 : val, currency: document.getElementById('ccy').value});
-      });
-
-      document.getElementById('btnCustomActivation').addEventListener('click', () => {
-        fire('Activation', {source:'mobile-test'}, true);
-      });
-
-      document.getElementById('btnContact').addEventListener('click', () => {
-        fire('Contact', {method:'whatsapp'});
-      });
-
-      document.getElementById('btnSubscribe').addEventListener('click', () => {
-        fire('Subscribe', {plan:'basic'});
-      });
-
-      document.getElementById('btnSearch').addEventListener('click', () => {
-        fire('Search', {search_string:'测试关键词'});
-      });
-    });
-  </script>
-  <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=PIXEL_ID_REPLACE_ME&ev=PageView&noscript=1"
-  /></noscript>
 </head>
 <body>
-  <header>
-    <span class="pill" id="statusPill">Not connected</span>
-    <input id="pixelId" type="text" inputmode="numeric" placeholder="输入你的 Pixel ID（或用 ?pid=xxx 打开）" />
-    <button id="applyPixel">连接像素</button>
-  </header>
-
-  <main class="grid">
-    <section class="card stack">
-      <h2 style="margin:0;">常用事件（适配移动端）</h2>
-      <div class="row">
-        <button class="btn" id="btnViewContent">ViewContent</button>
-        <button class="btn" id="btnAddToCart">AddToCart</button>
-      </div>
-      <div class="row">
-        <button class="btn" id="btnInitiateCheckout">InitiateCheckout</button>
-        <button class="btn" id="btnLead">Lead</button>
-      </div>
-      <div class="row">
-        <button class="btn" id="btnPurchase">Purchase</button>
-        <button class="btn secondary" id="btnCustomActivation">自定义：Activation</button>
-      </div>
-    </section>
-
-    <section class="card stack">
-      <h3 style="margin:0;">事件参数（可选）</h3>
-      <div class="row">
-        <div>
-          <label for="amount">金额（用于 Purchase）</label>
-          <input id="amount" type="number" step="0.01" placeholder="例如 29.90" />
-        </div>
-        <div>
-          <label for="ccy">币种</label>
-          <select id="ccy">
-            <option value="MYR" selected>MYR</option>
-            <option value="USD">USD</option>
-            <option value="SGD">SGD</option>
-            <option value="THB">THB</option>
-            <option value="VND">VND</option>
-            <option value="IDR">IDR</option>
-          </select>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="brand-logo"></div>
+        <div class="brand-text">
+          <div class="brand-title">KWAI ADS PANEL</div>
+          <div class="brand-sub">Kwai 广告事件 · 像素一键激活后台</div>
         </div>
       </div>
-    </section>
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span>Sandbox 模式已连接</span>
+      </div>
+    </header>
 
-    <section class="card stack">
-      <h3 style="margin:0;">Advanced Matching（可选）</h3>
-      <div class="row">
-        <div>
-          <label for="em">邮箱 em</label>
-          <input id="em" type="email" placeholder="name@example.com" />
+    <main>
+      <!-- 左侧：控制面板 -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">广告事件选择</div>
+            <div class="card-sub">勾选需要模拟激活的 Kwai 广告事件</div>
+          </div>
+          <span class="badge-soft">Kwai Pixel · Mock</span>
         </div>
-        <div>
-          <label for="ph">手机号 ph（仅数字，含国家码）</label>
-          <input id="ph" type="tel" inputmode="numeric" placeholder="60123456789" />
+
+        <div class="field-group">
+          <div class="field-label">
+            <span>广告事件列表</span>
+            <span style="font-size:11px;color:#9ca3af;">仅前端模拟，需自行接入真实像素</span>
+          </div>
+
+          <div class="event-list">
+            <label class="event-item">
+              <input type="checkbox" value="ViewContent" />
+              <div>
+                <div class="event-text-main">浏览内容</div>
+                <div class="event-text-sub">ViewContent · 页面浏览</div>
+              </div>
+              <span class="event-meta">推荐开启</span>
+            </label>
+
+            <label class="event-item">
+              <input type="checkbox" value="ClickAd" />
+              <div>
+                <div class="event-text-main">广告点击</div>
+                <div class="event-text-sub">ClickAd · 点击行为</div>
+              </div>
+              <span class="event-meta">基础追踪</span>
+            </label>
+
+            <label class="event-item">
+              <input type="checkbox" value="Register" />
+              <div>
+                <div class="event-text-main">注册</div>
+                <div class="event-text-sub">Register · 账号创建</div>
+              </div>
+              <span class="event-meta">冷流量必备</span>
+            </label>
+
+            <label class="event-item">
+              <input type="checkbox" value="AddToCart" />
+              <div>
+                <div class="event-text-main">加入购物车</div>
+                <div class="event-text-sub">AddToCart · 加购行为</div>
+              </div>
+              <span class="event-meta">电商常用</span>
+            </label>
+
+            <label class="event-item">
+              <input type="checkbox" value="Purchase" />
+              <div>
+                <div class="event-text-main">完成购买</div>
+                <div class="event-text-sub">Purchase · 付费转化</div>
+              </div>
+              <span class="event-meta">核心 KPI</span>
+            </label>
+
+            <label class="event-item">
+              <input type="checkbox" value="AppInstall" />
+              <div>
+                <div class="event-text-main">应用安装</div>
+                <div class="event-text-sub">AppInstall · 安装完成</div>
+              </div>
+              <span class="event-meta">App 拉新</span>
+            </label>
+          </div>
         </div>
-      </div>
-      <button class="btn" id="applyAM">应用高级匹配</button>
-      <p class="footer">提示：这里传入未哈希的 em/ph，像素会自动做 SHA-256 再上报。</p>
-    </section>
 
-    <section class="card stack">
-      <h3 style="margin:0;">其它常见事件</h3>
-      <div class="row">
-        <button class="btn secondary" id="btnContact">Contact</button>
-        <button class="btn secondary" id="btnSubscribe">Subscribe</button>
-      </div>
-      <div class="row">
-        <button class="btn secondary" id="btnSearch">Search</button>
-        <button class="btn secondary" onclick="fire('CompleteRegistration')">CompleteRegistration</button>
-      </div>
-    </section>
+        <div class="field-row">
+          <button class="mini-btn" id="selectAllBtn">全选事件</button>
+          <button class="mini-btn mini-btn-ghost" id="clearAllBtn">清空选择</button>
+        </div>
 
-    <section class="card stack">
-      <h3 style="margin:0;">事件日志</h3>
-      <div id="eventLog" class="log" aria-live="polite"></div>
-      <div class="footer">在 Meta Events Manager 的「Test Events」里也能看到实时事件。</div>
-    </section>
+        <div class="field-row">
+          <div class="input-chip">
+            <span>激活次数</span>
+            <input type="number" id="timesInput" min="1" value="1" />
+            <span>次 / 事件</span>
+          </div>
+          <div class="input-chip">
+            <span>触发间隔</span>
+            <input type="number" id="intervalInput" min="0" value="0" />
+            <span>ms</span>
+          </div>
+        </div>
 
-    <section class="card">
-      <div class="footer">
-        仅用于测试/验证像素触发。上线投放请确保隐私政策、Cookie 提示、同意管理等已到位；若需要服务端 <b>Conversions API</b> 去重与更稳的归因，这个页面可配合你们后端加 CAPI（用同一个 <code>eventID</code> 做去重）。
-      </div>
-    </section>
-  </main>
+        <button class="primary-btn" id="activateBtn">
+          <span class="primary-btn-icon">⚡</span>
+          <span>一键激活已勾选 Kwai 广告事件</span>
+        </button>
+
+        <p class="hint">
+          提示：实际对接时，把脚本里的
+          <code>console.log</code> 换成 Kwai 官方像素/SDK 的触发代码即可。
+        </p>
+      </section>
+
+      <!-- 右侧：日志 -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">事件日志</div>
+            <div class="card-sub">实时查看每一次广告事件的激活记录</div>
+          </div>
+        </div>
+
+        <div class="log-actions">
+          <button class="tiny-btn" id="mockDemoBtn">示例触发</button>
+          <button class="tiny-btn" id="clearLogBtn">清空日志</button>
+        </div>
+
+        <div class="log-box" id="logBox">
+          <div class="log-line log-empty">暂无日志，点击「一键激活」开始触发事件。</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const eventCheckboxes = document.querySelectorAll(
+        ".event-item input[type='checkbox']"
+      );
+      const activateBtn = document.getElementById("activateBtn");
+      const selectAllBtn = document.getElementById("selectAllBtn");
+      const clearAllBtn = document.getElementById("clearAllBtn");
+      const timesInput = document.getElementById("timesInput");
+      const intervalInput = document.getElementById("intervalInput");
+      const logBox = document.getElementById("logBox");
+      const mockDemoBtn = document.getElementById("mockDemoBtn");
+      const clearLogBtn = document.getElementById("clearLogBtn");
+
+      function now() {
+        const d = new Date();
+        const pad = (n) => String(n).padStart(2, "0");
+        return (
+          pad(d.getHours()) +
+          ":" +
+          pad(d.getMinutes()) +
+          ":" +
+          pad(d.getSeconds())
+        );
+      }
+
+      function appendLog(message, type = "info") {
+        const line = document.createElement("div");
+        line.className = "log-line " + type;
+        line.innerHTML =
+          '<span class="log-time">[' +
+          now() +
+          ']</span> <span class="log-tag">[Kwai]</span> ' +
+          message;
+
+        const empty = logBox.querySelector(".log-empty");
+        if (empty) empty.remove();
+
+        logBox.appendChild(line);
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+
+      function clearLog() {
+        logBox.innerHTML =
+          '<div class="log-line log-empty">日志已清空，等待新的事件触发。</div>';
+      }
+
+      function getSelectedEvents() {
+        return Array.from(eventCheckboxes)
+          .filter((cb) => cb.checked)
+          .map((cb) => cb.value);
+      }
+
+      function simulateKwaiEvent(eventName) {
+        // TODO: 这里替换成真实的 Kwai 像素 / SDK 触发代码
+        console.log("[Kwai Pixel] Trigger event:", eventName);
+        appendLog("已触发广告事件：<b>" + eventName + "</b>", "success");
+      }
+
+      function activateOnce(events) {
+        events.forEach((e) => simulateKwaiEvent(e));
+      }
+
+      activateBtn.addEventListener("click", () => {
+        const selectedEvents = getSelectedEvents();
+        if (selectedEvents.length === 0) {
+          appendLog("请先勾选至少一个广告事件，再执行一键激活。", "error");
+          return;
+        }
+
+        let times = parseInt(timesInput.value, 10);
+        let interval = parseInt(intervalInput.value, 10);
+
+        if (isNaN(times) || times < 1) times = 1;
+        if (isNaN(interval) || interval < 0) interval = 0;
+
+        appendLog(
+          "开始激活事件：[" +
+            selectedEvents.join(", ") +
+            "]，每个事件 " +
+            times +
+            " 次，间隔 " +
+            interval +
+            "ms。",
+          "info"
+        );
+
+        activateBtn.disabled = true;
+
+        let triggerCount = 0;
+        const total = times;
+
+        function schedule(index) {
+          if (index >= total) {
+            appendLog("所有事件已完成激活。", "success");
+            activateBtn.disabled = false;
+            return;
+          }
+
+          if (interval > 0) {
+            setTimeout(() => {
+              triggerCount++;
+              appendLog(
+                "第 " + triggerCount + " 轮事件触发中…",
+                "info"
+              );
+              activateOnce(selectedEvents);
+              schedule(index + 1);
+            }, interval);
+          } else {
+            triggerCount++;
+            appendLog("第 " + triggerCount + " 轮事件触发中…", "info");
+            activateOnce(selectedEvents);
+            schedule(index + 1);
+          }
+        }
+
+        schedule(0);
+      });
+
+      selectAllBtn.addEventListener("click", () => {
+        eventCheckboxes.forEach((cb) => (cb.checked = true));
+        appendLog("已全选所有广告事件。", "info");
+      });
+
+      clearAllBtn.addEventListener("click", () => {
+        eventCheckboxes.forEach((cb) => (cb.checked = false));
+        appendLog("已清空所有事件选择。", "info");
+      });
+
+      clearLogBtn.addEventListener("click", clearLog);
+
+      mockDemoBtn.addEventListener("click", () => {
+        appendLog("执行示例触发：ViewContent + Purchase 各 1 次。", "info");
+        simulateKwaiEvent("ViewContent");
+        simulateKwaiEvent("Purchase");
+      });
+
+      appendLog("Kwai 广告事件激活后台已就绪，选好事件后点击「一键激活」。");
+    })();
+  </script>
 </body>
 </html>
