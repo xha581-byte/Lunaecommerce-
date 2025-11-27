@@ -439,11 +439,11 @@
           <span class="badge-soft">Kwai Pixel · Mock</span>
         </div>
 
-        <!-- 新增：像素输入区域 -->
+        <!-- 像素输入区域 -->
         <div class="field-group">
           <div class="field-label">
             <span>像素标识</span>
-            <span style="font-size:11px;color:#9ca3af;">可填像素 ID / 名称，方便区分不同像素</span>
+            <span style="font-size:11px;color:#9ca3af;">可填像素 ID / 名称，日志会显示对应像素</span>
           </div>
           <div class="input-chip input-chip-full">
             <span>Kwai Pixel</span>
@@ -458,7 +458,7 @@
         <div class="field-group">
           <div class="field-label">
             <span>广告事件列表</span>
-            <span style="font-size:11px;color:#9ca3af;">仅前端模拟，需自行接入真实像素</span>
+            <span style="font-size:11px;color:#9ca3af;">当前为前端模拟，需要正确集成官方像素 SDK 才能真实上报</span>
           </div>
 
           <div class="event-list">
@@ -542,8 +542,7 @@
         </button>
 
         <p class="hint">
-          提示：实际对接时，把脚本里的
-          <code>console.log</code> 换成 Kwai 官方像素/SDK 的触发代码即可。
+          提示：若日志显示 <b>FAILED</b> 且提示「未检测到 Kwai 像素 SDK」，说明页面上还没正确安装官方像素代码，广告商那边基本收不到。
         </p>
       </section>
 
@@ -552,7 +551,7 @@
         <div class="card-header">
           <div>
             <div class="card-title">事件日志</div>
-            <div class="card-sub">实时查看每一次广告事件的激活记录</div>
+            <div class="card-sub">每条事件都会标记 SUCCESS 或 FAILED</div>
           </div>
         </div>
 
@@ -581,7 +580,7 @@
       const logBox = document.getElementById("logBox");
       const mockDemoBtn = document.getElementById("mockDemoBtn");
       const clearLogBtn = document.getElementById("clearLogBtn");
-      const pixelInput = document.getElementById("pixelInput"); // 新增：像素输入
+      const pixelInput = document.getElementById("pixelInput");
 
       function now() {
         const d = new Date();
@@ -622,32 +621,54 @@
           .map((cb) => cb.value);
       }
 
+      // 核心：模拟 Kwai 事件 + 成功/失败判断
       function simulateKwaiEvent(eventName) {
         const pixelId = (pixelInput.value || "").trim();
-
-        // TODO: 这里替换成真实的 Kwai 像素 / SDK 触发代码
-        console.log("[Kwai Pixel] Trigger event:", {
-          pixel: pixelId || "NO_PIXEL_SET",
+        const payload = {
+          pixel: pixelId || null,
           event: eventName,
-        });
+          ts: Date.now(),
+        };
 
-        if (pixelId) {
-          appendLog(
-            '像素 <b>' +
-              pixelId +
-              "</b> 已触发广告事件：<b>" +
-              eventName +
-              "</b>",
-            "success"
-          );
-        } else {
-          appendLog(
-            "已触发广告事件：<b>" +
-              eventName +
-              "</b>（当前未填写像素标识）",
-            "success"
-          );
+        // 发送前日志
+        appendLog(
+          '准备触发像素 <b>' +
+            (pixelId || "未设置") +
+            "</b> 的事件：<b>" +
+            eventName +
+            "</b>",
+          "info"
+        );
+
+        let statusMessage = "";
+        let logType = "success";
+
+        try {
+          // 如果页面集成了 Kwai 官方 SDK（假设为 window.KwaiAdsPixel.track）
+          if (
+            window.KwaiAdsPixel &&
+            typeof window.KwaiAdsPixel.track === "function"
+          ) {
+            window.KwaiAdsPixel.track(eventName, payload);
+            statusMessage =
+              "状态：<b>SUCCESS</b> · 已调用 Kwai 像素 SDK，上报广告平台。";
+            logType = "success";
+          } else {
+            statusMessage =
+              "状态：<b>FAILED</b> · 未检测到 Kwai 像素 SDK，当前仅本地模拟，广告商可能收不到。";
+            logType = "error";
+          }
+        } catch (err) {
+          statusMessage =
+            "状态：<b>FAILED</b> · 调用 Kwai 像素 SDK 报错：" +
+            (err && err.message ? err.message : "未知错误");
+          logType = "error";
         }
+
+        appendLog(statusMessage, logType);
+
+        // 控制台输出方便你自己调试
+        console.log("[Kwai Pixel] Trigger event:", payload, statusMessage);
       }
 
       function activateOnce(events) {
@@ -689,7 +710,7 @@
 
         function schedule(index) {
           if (index >= total) {
-            appendLog("所有事件已完成激活。", "success");
+            appendLog("所有事件已完成激活流程。", "success");
             activateBtn.disabled = false;
             return;
           }
@@ -728,12 +749,17 @@
       clearLogBtn.addEventListener("click", clearLog);
 
       mockDemoBtn.addEventListener("click", () => {
-        appendLog("执行示例触发：ViewContent + Purchase 各 1 次。", "info");
+        appendLog(
+          "执行示例触发：ViewContent + Purchase 各 1 次（用于快速检查 SUCCESS / FAILED 状态）。",
+          "info"
+        );
         simulateKwaiEvent("ViewContent");
         simulateKwaiEvent("Purchase");
       });
 
-      appendLog("Kwai 广告事件激活后台已就绪，填好像素 & 选好事件后点击「一键激活」。");
+      appendLog(
+        "Kwai 广告事件激活后台已就绪：填好像素、选好事件后点击「一键激活」，并留意 SUCCESS / FAILED 状态。"
+      );
     })();
   </script>
 </body>
