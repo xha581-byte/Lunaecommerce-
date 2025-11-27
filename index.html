@@ -288,6 +288,15 @@
       white-space: nowrap;
     }
 
+    .input-chip-full {
+      width: 100%;
+    }
+
+    .input-chip-full input {
+      width: 100%;
+      text-align: left;
+    }
+
     .primary-btn {
       width: 100%;
       margin-top: 8px;
@@ -430,6 +439,22 @@
           <span class="badge-soft">Kwai Pixel · Mock</span>
         </div>
 
+        <!-- 新增：像素输入区域 -->
+        <div class="field-group">
+          <div class="field-label">
+            <span>像素标识</span>
+            <span style="font-size:11px;color:#9ca3af;">可填像素 ID / 名称，方便区分不同像素</span>
+          </div>
+          <div class="input-chip input-chip-full">
+            <span>Kwai Pixel</span>
+            <input
+              type="text"
+              id="pixelInput"
+              placeholder="例如：KWAI-123456 或 kwai_pixel_main"
+            />
+          </div>
+        </div>
+
         <div class="field-group">
           <div class="field-label">
             <span>广告事件列表</span>
@@ -556,6 +581,7 @@
       const logBox = document.getElementById("logBox");
       const mockDemoBtn = document.getElementById("mockDemoBtn");
       const clearLogBtn = document.getElementById("clearLogBtn");
+      const pixelInput = document.getElementById("pixelInput"); // 新增：像素输入
 
       function now() {
         const d = new Date();
@@ -597,9 +623,31 @@
       }
 
       function simulateKwaiEvent(eventName) {
+        const pixelId = (pixelInput.value || "").trim();
+
         // TODO: 这里替换成真实的 Kwai 像素 / SDK 触发代码
-        console.log("[Kwai Pixel] Trigger event:", eventName);
-        appendLog("已触发广告事件：<b>" + eventName + "</b>", "success");
+        console.log("[Kwai Pixel] Trigger event:", {
+          pixel: pixelId || "NO_PIXEL_SET",
+          event: eventName,
+        });
+
+        if (pixelId) {
+          appendLog(
+            '像素 <b>' +
+              pixelId +
+              "</b> 已触发广告事件：<b>" +
+              eventName +
+              "</b>",
+            "success"
+          );
+        } else {
+          appendLog(
+            "已触发广告事件：<b>" +
+              eventName +
+              "</b>（当前未填写像素标识）",
+            "success"
+          );
+        }
       }
 
       function activateOnce(events) {
@@ -619,8 +667,12 @@
         if (isNaN(times) || times < 1) times = 1;
         if (isNaN(interval) || interval < 0) interval = 0;
 
+        const pixelId = (pixelInput.value || "").trim() || "未设置";
+
         appendLog(
-          "开始激活事件：[" +
+          "开始激活像素 <b>" +
+            pixelId +
+            "</b> 的事件：[" +
             selectedEvents.join(", ") +
             "]，每个事件 " +
             times +
@@ -681,7 +733,7 @@
         simulateKwaiEvent("Purchase");
       });
 
-      appendLog("Kwai 广告事件激活后台已就绪，选好事件后点击「一键激活」。");
+      appendLog("Kwai 广告事件激活后台已就绪，填好像素 & 选好事件后点击「一键激活」。");
     })();
   </script>
 </body>
